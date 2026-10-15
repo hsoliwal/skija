@@ -13,6 +13,110 @@ Active Skija project is located at [HumbleUI/Skija](https://github.com/HumbleUI/
 ![](extras/logo.png)
 
 
+<!-- fork-homepage-guide:begin -->
+## Explore this historical fork
+
+This fork preserves [JetBrains/skija](https://github.com/JetBrains/skija), the
+Java/JNI bindings to Skia represented by this source tree. The maintenance warning
+above matters: the upstream README directs new users to
+[HumbleUI/Skija](https://github.com/HumbleUI/Skija/). This fork is useful for studying
+the older API, native-resource ownership, raster drawing and platform integration;
+it is not a claim that the historical JetBrains line has resumed maintenance.
+
+At reviewed baseline
+[`8581a6c`](https://github.com/hsoliwal/skija/commit/8581a6c04808c0ada7863aabed9f2a9d77353b39),
+the default tree matched JetBrains upstream. This documentation adds a first
+experiment, not a new renderer or verified performance improvement. Historical
+platform/backend lists and benchmark wording below retain their upstream context;
+qualify the exact checkout on your target OS and architecture.
+
+### Five drawing concepts
+
+| Concept | Role | Source |
+| --- | --- | --- |
+| Surface | Owns a drawing destination, such as an in-memory raster | [Surface.java](shared/java/Surface.java) |
+| Canvas | Issues drawing commands to a destination | [Canvas.java](shared/java/Canvas.java) |
+| Paint | Color, stroke and effects used by a drawing call | [Paint.java](shared/java/Paint.java) |
+| Image / Data | A snapshot and its encoded bytes | [Image.java](shared/java/Image.java), [Data.java](shared/java/Data.java) |
+| Managed resource | A Java wrapper whose lifetime controls native memory | [Managed.java](shared/java/impl/Managed.java) |
+
+A canvas obtained from `surface.getCanvas()` is managed by that surface; do not
+close it independently. Close resources you own after their last use. A Java heap
+measurement alone does not describe native Skia memory.
+
+### Quickstart: build and inspect the local bindings
+
+Use Git, Python 3, JDK 11+ with `JAVA_HOME` and matching Java tools on `PATH`, CMake,
+Ninja and a platform C++ toolchain. The scripts download their pinned historical
+Skia archive and Java dependencies; availability and host compatibility must be
+checked rather than inferred from today's Skia releases.
+
+```sh
+git clone https://github.com/hsoliwal/skija.git
+cd skija
+git rev-parse HEAD
+java -version
+python3 script/build.py
+python3 script/test.py
+```
+
+The [build script](script/build.py) places Java/platform resources under
+`shared/target/classes` and `platform/target/classes`, with native build products
+under `platform/build`. The [test script](script/test.py) builds as needed, enables
+assertions and JNI checks, then runs `org.jetbrains.skija.test.TestSuite`.
+Passing that suite does not qualify all UI frameworks or GPU backends.
+
+### Worked example: a red circle without a window
+
+After configuring a matching platform dependency using [Using Skija](#using-skija)
+or your local build, place this method in a Java class with these imports:
+
+```java
+import org.jetbrains.skija.*;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+
+static void writeCircle() throws IOException {
+    try (Surface surface = Surface.makeRasterN32Premul(100, 100);
+         Paint paint = new Paint().setColor(0xFFFF0000)) {
+        Canvas canvas = surface.getCanvas();
+        canvas.clear(0xFFFFFFFF);
+        canvas.drawCircle(50, 50, 30, paint);
+        try (Image image = surface.makeImageSnapshot();
+             Data png = image.encodeToData(EncodedImageFormat.PNG)) {
+            if (png == null) throw new IOException("PNG encoding failed");
+            Files.write(Path.of("skija-circle.png"), png.getBytes(),
+                StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+        }
+    }
+}
+```
+
+This example method uses JDK 11+ (`Path.of`). It is source-checked, not executed
+by this documentation update. The expected output is a 100×100 PNG with a red
+circle on white. `CREATE_NEW` refuses to overwrite an existing file. The raster
+path needs the matching native library but no window or GPU context; a successful
+raster example is not evidence for OpenGL, Direct3D or Metal rendering.
+
+### Troubleshooting and reading cheat sheet
+
+| Question | First place to look |
+| --- | --- |
+| Native library fails to load | Match OS/architecture, Java module path and platform resources; inspect [platform/](platform/) |
+| Wrong alpha/color | Colors here are ARGB; `0xFF` alpha is opaque |
+| Native memory lasts too long | Follow resource ownership and `AutoCloseable` scopes |
+| Need a window or event loop | [LWJGL examples](examples/lwjgl/) and [Getting Started](docs/Getting%20Started.md) |
+| Need typography and API conventions | [Getting Started](docs/Getting%20Started.md), [Conventions](docs/Conventions.md), [Java source](shared/java/) |
+| Need current project development | Follow the maintained-project link above and review its own API/build instructions |
+
+Retain [LICENSE](LICENSE) and [NOTICE](NOTICE) when reusing this tree. Report the
+exact revision, OS/architecture, JDK, native library and smallest drawing example;
+do not mix newer Skia binaries into this pinned historical build without validation.
+
+<!-- fork-homepage-guide:end -->
+
 ## Motivation: Why Skija?
 
 Because Java doesn’t have a powerful and modern 2D graphics — still!
