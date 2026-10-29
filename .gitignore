@@ -1,9 +1,0 @@
-.cpcache
-docs/apidocs
-target
-/platform/build
-/platform/Skia-m*
-*.log
-*.zip
-examples/bitmap/output.png
-__pycache__
