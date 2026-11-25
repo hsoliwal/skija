@@ -30,7 +30,7 @@ jobs:
           SPACE_TOKEN: ${{ secrets.SPACE_TOKEN }}
       - run: python3 script/deploy_shared.py --dry-run
         if: github.ref != 'refs/heads/master'
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: skija-shared-jar
           path: shared/target/*.jar
@@ -60,7 +60,7 @@ jobs:
           SPACE_TOKEN: ${{ secrets.SPACE_TOKEN }}
       - run: python3 script/deploy_platform.py --arch=${{ matrix.arch }} --dry-run
         if: github.ref != 'refs/heads/master'
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: skija-macos-${{ matrix.arch }}-jar
           path: platform/target/*.jar
@@ -87,7 +87,7 @@ jobs:
           SPACE_TOKEN: ${{ secrets.SPACE_TOKEN }}
       - run: python3 script/deploy_platform.py --dry-run
         if: github.ref != 'refs/heads/master'
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: skija-linux-jar
           path: platform/target/*.jar
@@ -116,7 +116,7 @@ jobs:
           SPACE_TOKEN: ${{ secrets.SPACE_TOKEN }}
       - run: python3 script/deploy_platform.py --dry-run
         if: github.ref != 'refs/heads/master'
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: skija-windows-jar
           path: platform/target/*.jar
